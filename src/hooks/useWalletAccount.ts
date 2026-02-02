@@ -11,8 +11,6 @@ export const useWalletAccount = () => {
     transport: http(),
   });
 
-  //console.log("USER:", address);
-  //console.log("WALLET CLIENT:", walletClient);
 
   return {
     isConnected,

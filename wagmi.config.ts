@@ -1,5 +1,13 @@
-import { WalletConnection } from "@/lib/reown/WalletConnection";
+import { createConfig, http } from "wagmi";
+import { base } from "wagmi/chains";
+import { getDefaultConfig } from "@openfort/react";
 
-const { wagmiAdapter } = WalletConnection();
-
-export const wagmiConfig = wagmiAdapter.wagmiConfig;
+export const wagmiConfig = createConfig(
+    getDefaultConfig({
+        appName: "skillhub",
+        chains: [base],
+        transports: {
+            [base.id]: http(),
+        },
+    })
+);

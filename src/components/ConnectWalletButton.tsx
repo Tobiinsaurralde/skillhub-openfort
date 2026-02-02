@@ -1,10 +1,13 @@
 "use client";
 
 import React from "react";
+import { OpenfortButton } from "@openfort/react";
 
 
 export const ConnectWalletButton: React.FC = () => {
   return (
-      <appkit-button size="md" label={"Conectar Billetera"} />
+    <div className="flex gap-2">
+      <OpenfortButton />
+    </div>
   );
 };
