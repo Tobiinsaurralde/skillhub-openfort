@@ -10,7 +10,7 @@ interface CategoryCardProps {
 const CategoryCard = ({ title, icon: Icon, color }: CategoryCardProps) => {
   return (
     <Link
-      to="/browse"
+      to={`/browse?category=${encodeURIComponent(title)}`}
       className="group relative overflow-hidden rounded-lg border bg-card p-6 transition-all hover:shadow-lg"
       style={{ borderTopColor: color, borderTopWidth: "3px" }}
     >

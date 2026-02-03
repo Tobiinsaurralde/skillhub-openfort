@@ -18,7 +18,7 @@ const CreateService = () => {
   const [formData, setFormData] = useState({
     title: "",
     category: "",
-    price: import.meta.env.MODE === "development" ? 0.01 : 10,
+    price: 10,
     deliveryTime: "3 days",
     revisions: "Unlimited",
     description: "",
@@ -100,9 +100,9 @@ const CreateService = () => {
   const canAdvance = () => {
     if (step === 1) {
       return (
-        formData.title.length > 5 &&
+        formData.title.length >= 5 &&
         formData.category !== "" &&
-        formData.price > 0.0
+        Number(formData.price) > 0
       );
     }
     if (step === 2) {
@@ -110,8 +110,8 @@ const CreateService = () => {
         .split(/\s+/)
         .filter(Boolean).length;
       return (
-        wordCount >= 10 &&
-        formData.description.length >= 100 &&
+        wordCount >= 3 &&
+        formData.description.length >= 50 &&
         formData.imageFile !== null &&
         formData.includes.length > 0
       );
@@ -148,13 +148,16 @@ const CreateService = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handlePublish = async () => {
+    // Explicit check to ensure we are on the last step
+    if (step !== 3) return;
 
     if (!walletAddress) {
-      alert(
-        "Error: Wallet not connected. Please connect to publish."
-      );
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to publish a service.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -176,11 +179,7 @@ const CreateService = () => {
       dataToSend.append("imageFile", formData.imageFile);
     }
 
-    console.log(dataToSend);
-
     try {
-      console.log("Sending FormData to backend...");
-
       const response = await fetch(API_URL, {
         method: "POST",
         body: dataToSend,
@@ -189,18 +188,29 @@ const CreateService = () => {
       const result = await response.json();
 
       if (response.ok) {
-        alert(
-          `Service published successfully! Image URL: ${result.service.imageUrl}`
-        );
-        navigate("/");
+        toast({
+          title: "Service Published!",
+          description: "Your service is now live on the marketplace.",
+          className: "bg-green-600 text-white border-none"
+        });
+        // Short delay to let user see toast before redirect
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
       } else {
-        alert(`Error publishing: ${result.message || "Unknown error"}`);
-        console.error("Error del servidor:", result);
+        toast({
+          title: "Error publishing service",
+          description: result.message || "Unknown error",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      alert(
-        "Connection error with server. Ensure your backend is running."
-      );
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to the server.",
+        variant: "destructive"
+      });
       console.error("Error de red:", error);
     } finally {
       setIsSubmitting(false);
@@ -218,9 +228,8 @@ const CreateService = () => {
         {/* Indicador de Pasos (Componente Separado) */}
         <StepIndicator step={step} />
 
-        <form
+        <div
           className="rounded-xl border bg-white p-8 shadow-lg"
-          onSubmit={handleSubmit}
         >
           {renderStepContent()}
 
@@ -240,15 +249,39 @@ const CreateService = () => {
 
             {step < 3 ? (
               <Button
-                onClick={() => setStep(step + 1)}
-                disabled={!canAdvance()}
+                onClick={() => {
+                  if (canAdvance()) {
+                    setStep(step + 1);
+                  } else {
+                    // Identify errors
+                    const errors = [];
+                    if (step === 1) {
+                      if (formData.title.length < 5) errors.push("Title (min 5 chars)");
+                      if (!formData.category) errors.push("Category");
+                      if (Number(formData.price) <= 0) errors.push("Price (must be positive)");
+                    } else if (step === 2) {
+                      const wordCount = formData.description.split(/\s+/).filter(Boolean).length;
+                      if (wordCount < 3) errors.push("Description (min 3 words)");
+                      if (formData.description.length < 50) errors.push("Description (min 50 chars)");
+                      if (!formData.imageFile) errors.push("Image");
+                      if (formData.includes.length === 0) errors.push("At least one included item");
+                    }
+
+                    toast({
+                      title: "Please complete the following:",
+                      description: errors.join(", "),
+                      variant: "destructive"
+                    });
+                  }
+                }}
                 type="button"
               >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button
-                type="submit"
+                type="button" // Changed from submit to button to prevent auto-submission
+                onClick={handlePublish}
                 size="lg"
                 className="bg-green-600 hover:bg-green-700"
                 disabled={!canAdvance() || isSubmitting}
@@ -257,7 +290,7 @@ const CreateService = () => {
               </Button>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

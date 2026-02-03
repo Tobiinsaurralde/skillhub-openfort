@@ -149,11 +149,11 @@ const Index = () => {
               Join millions of people who use our platform to turn their ideas into reality
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
-                Become a Seller
+              <Button size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90" asChild>
+                <Link to="/profile">Become a Seller</Link>
               </Button>
-              <Button size="lg" className="bg-accent hover:bg-accent/90">
-                Get Started
+              <Button size="lg" className="bg-accent hover:bg-accent/90" asChild>
+                <Link to="/browse">Get Started</Link>
               </Button>
             </div>
           </div>

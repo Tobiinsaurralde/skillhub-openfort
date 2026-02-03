@@ -5,6 +5,9 @@ export interface IPurchase extends Document {
     buyerWallet: string;
     sellerWallet: string;
     txHash: string;
+    blockNumber: string;
+    chainId: number;
+    taskInput?: string;
     createdAt: Date;
 }
 
@@ -30,6 +33,19 @@ const PurchaseSchema: Schema = new Schema(
             required: true,
             unique: true,
         },
+        blockNumber: {
+            type: String,
+            required: true,
+        },
+        chainId: {
+            type: Number,
+            required: true,
+            default: 8453, // Base mainnet
+        },
+        taskInput: {
+            type: String,
+            required: false // Optional, mainly for AI agents
+        }
     },
     {
         timestamps: true,

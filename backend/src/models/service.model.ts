@@ -21,6 +21,10 @@ const ServiceSchema = new Schema(
     imageUrl: { type: String, required: true },
     imagePublicId: { type: String, required: true },
     averageRating: { type: Number, default: 0 },
+    totalReviews: { type: Number, default: 0 },
+    source: { type: String, default: "local" }, // local, 8004scan
+    externalProfileUrl: { type: String },
+    chainId: { type: Number, default: 8453 } // 8453 = Base, 11155111 = Sepolia
   },
   { timestamps: true }
 );

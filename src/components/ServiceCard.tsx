@@ -19,6 +19,8 @@ interface ServiceCardProps {
   };
 }
 
+import { useFavorites } from "@/hooks/useFavorites";
+
 const ServiceCard = ({
   _id,
   title,
@@ -31,6 +33,9 @@ const ServiceCard = ({
   walletAddress,
   profile,
 }: ServiceCardProps) => {
+  const { favorites, toggleFavorite } = useFavorites();
+  const isFavorite = favorites.includes(_id);
+
   return (
     <Link to={`/service/${_id}`} className="group">
       <div className="overflow-hidden rounded-lg border bg-card transition-all hover:shadow-lg">
@@ -43,9 +48,13 @@ const ServiceCard = ({
           <Button
             size="icon"
             variant="secondary"
-            className="absolute right-2 top-2 h-8 w-8 rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+            className={`absolute right-2 top-2 h-8 w-8 rounded-full transition-opacity group-hover:opacity-100 ${isFavorite ? "opacity-100 text-red-500" : "opacity-0"}`}
+            onClick={(e) => {
+              e.preventDefault(); // Prevent navigation
+              toggleFavorite(_id);
+            }}
           >
-            <Heart className="h-4 w-4" />
+            <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
           </Button>
           <Badge className="absolute left-2 top-2 bg-background/80 text-foreground backdrop-blur-sm">
             {category}

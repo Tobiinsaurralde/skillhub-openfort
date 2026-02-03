@@ -28,9 +28,11 @@ export const createService = async (
       deliveryTime,
       revisions,
       description,
-      walletAddress,
+      walletAddress: rawWalletAddress,
       includes: includesJson,
     } = req.body;
+
+    const walletAddress = rawWalletAddress ? rawWalletAddress.toLowerCase() : "";
 
     if (!walletAddress || !isEvmAddress(walletAddress)) {
       return res.status(400).json({
@@ -126,9 +128,19 @@ export const getServices = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || "";
+    const priceMin = req.query.minPrice ? Number(req.query.minPrice) : undefined;
+    const priceMax = req.query.maxPrice ? Number(req.query.maxPrice) : undefined;
+    const ratingMin = req.query.minRating ? Number(req.query.minRating) : undefined;
+    const sortBy = (req.query.sortBy as string) || "relevance";
     const category = (req.query.category as string) || "All";
+    const ids = (req.query.ids as string) || "";
 
     const query: any = {};
+
+    if (ids) {
+      const idList = ids.split(",");
+      query._id = { $in: idList.map(id => new mongoose.Types.ObjectId(id)) };
+    }
 
     if (search) {
       query.title = { $regex: search, $options: "i" };
@@ -138,19 +150,53 @@ export const getServices = async (req: Request, res: Response) => {
       query.category = category;
     }
 
+    // Price Filter
+    if (priceMin !== undefined || priceMax !== undefined) {
+      query.price = {};
+      if (priceMin !== undefined) query.price.$gte = priceMin;
+      if (priceMax !== undefined) query.price.$lte = priceMax;
+    }
+
+    // Rating Filter
+    if (ratingMin !== undefined) {
+      query.averageRating = { $gte: ratingMin };
+    }
+
     const skip = (page - 1) * limit;
+
+    let sortStage: any = { createdAt: -1 }; // Default: Newest
+
+    if (sortBy === "price-low") {
+      sortStage = { price: 1 };
+    } else if (sortBy === "price-high") {
+      sortStage = { price: -1 };
+    } else if (sortBy === "rating") {
+      sortStage = { averageRating: -1 };
+    }
+    // relevance falls back to createdAt: -1 for now unless we add text scoring
 
     // Use aggregate to lookup profile
     const services = await Service.aggregate([
       { $match: query },
-      { $sort: { createdAt: -1 } },
+      { $sort: sortStage },
       { $skip: skip },
       { $limit: limit },
       {
         $lookup: {
           from: "profiles",
-          localField: "walletAddress",
-          foreignField: "walletAddress",
+          let: { sellerWallet: "$walletAddress" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [
+                    { $toLower: "$walletAddress" },
+                    { $toLower: "$$sellerWallet" }
+                  ]
+                }
+              }
+            }
+          ],
           as: "profile",
         },
       },
@@ -188,6 +234,8 @@ export const getServiceById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { buyer } = req.query; // Check if a buyer is viewing this
+    console.log(`=== GET SERVICE BY ID: ${id} ===`);
+    console.log("Buyer param:", buyer);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid Service ID" });
@@ -202,8 +250,19 @@ export const getServiceById = async (req: Request, res: Response) => {
       {
         $lookup: {
           from: "profiles",
-          localField: "walletAddress",
-          foreignField: "walletAddress",
+          let: { sellerWallet: "$walletAddress" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [
+                    { $toLower: "$walletAddress" },
+                    { $toLower: "$$sellerWallet" }
+                  ]
+                }
+              }
+            }
+          ],
           as: "profile",
         },
       },
@@ -224,10 +283,14 @@ export const getServiceById = async (req: Request, res: Response) => {
 
     // Check if purchased
     if (buyer) {
+      const buyerLower = (buyer as string).toLowerCase();
+      console.log("Checking purchase for buyer:", buyerLower);
       const purchase = await Purchase.findOne({
         serviceId: id,
-        buyerWallet: buyer,
+        buyerWallet: buyerLower,
       });
+
+      console.log("Purchase found:", purchase);
 
       if (purchase) {
         // Unlock contact info

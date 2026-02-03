@@ -43,7 +43,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://localhost:8080",
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -51,12 +51,16 @@ app.use(
 );
 
 import reviewRoutes from "./routes/review.route";
-// ...
+import transferRoutes from "./routes/transfer.route";
+
 app.use("/api/upload", uploadRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/transfers", transferRoutes);
+import proxyRoutes from "./routes/proxy.routes";
+app.use("/api/proxy", proxyRoutes);
 
 app.use("/protected/service/:id", async (req, res, next) => {
   console.log(res.getHeaders());

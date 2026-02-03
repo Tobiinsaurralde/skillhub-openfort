@@ -9,6 +9,7 @@ export interface IProfile extends Document {
     imagePublicId: string;
     whatsapp?: string;
     telegram?: string;
+    favorites: string[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -50,6 +51,12 @@ const ProfileSchema: Schema = new Schema(
             type: String,
             required: false,
         },
+        favorites: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Service",
+            },
+        ],
     },
     {
         timestamps: true,

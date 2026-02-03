@@ -32,6 +32,11 @@ const StepOne = ({ formData, handleChange, handleSelectChange }) => {
         <p className="text-xs text-muted-foreground mt-1">
           Max 80 characters. Be clear and attractive.
         </p>
+        {formData.title.length > 0 && formData.title.length < 5 && (
+          <p className="mt-1 text-xs text-red-500">
+            Title must be at least 5 characters.
+          </p>
+        )}
       </div>
 
       <div>
@@ -69,13 +74,19 @@ const StepOne = ({ formData, handleChange, handleSelectChange }) => {
             <Input
               id="price"
               name="price"
-              type="text"
+              type="number"
               value={formData.price}
-              readOnly
-              disabled
-              className="pl-10 bg-gray-100 cursor-not-allowed"
+              onChange={handleChange}
+              min={1.01}
+              step={0.01}
+              className="pl-10"
             />
           </div>
+          {Number(formData.price) <= 1 && (
+            <p className="mt-1 text-xs text-red-500">
+              Price must be greater than $1.
+            </p>
+          )}
         </div>
         <div>
           <label

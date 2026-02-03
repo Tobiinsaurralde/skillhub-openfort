@@ -1,22 +1,23 @@
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { createAppKit } from "@reown/appkit/react";
 import { http } from "wagmi";
-import { base } from "@reown/appkit/networks";
+import { base, arbitrum } from "@reown/appkit/networks";
 
 export const WalletConnection = () => {
   const projectId = "62c66ed4cd07119457a08ddce0d80464";
 
   const wagmiAdapter = new WagmiAdapter({
-    networks: [base],
+    networks: [base, arbitrum],
     transports: {
-      [base.id]: http(base.rpcUrls.default.http[0])
+      [base.id]: http(base.rpcUrls.default.http[0]),
+      [arbitrum.id]: http(arbitrum.rpcUrls.default.http[0]),
     },
     projectId,
   });
 
   const modal = createAppKit({
     adapters: [wagmiAdapter],
-    networks: [base],
+    networks: [base, arbitrum],
     projectId,
     metadata: {
       name: "Lender Dashboard",

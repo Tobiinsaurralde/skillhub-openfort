@@ -1,7 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IReview extends Document {
-    serviceId: mongoose.Types.ObjectId;
+    txHash: string;
+    chainId: number;
+    sellerWallet: string;
+    serviceId?: mongoose.Types.ObjectId; // Optional - only for on-site purchases
     reviewerWallet: string;
     rating: number;
     comment: string;
@@ -10,10 +13,23 @@ export interface IReview extends Document {
 
 const ReviewSchema: Schema = new Schema(
     {
+        txHash: {
+            type: String,
+            required: true,
+        },
+        chainId: {
+            type: Number,
+            required: true,
+            default: 8453, // Base mainnet
+        },
+        sellerWallet: {
+            type: String,
+            required: true,
+        },
         serviceId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Service",
-            required: true,
+            required: false, // Optional for off-site reviews
             index: true,
         },
         reviewerWallet: {
@@ -37,10 +53,13 @@ const ReviewSchema: Schema = new Schema(
     }
 );
 
-// Ensure a user can only review a service once
-ReviewSchema.index({ serviceId: 1, reviewerWallet: 1 }, { unique: true });
+// THE guardrail: one review per payment per chain
+ReviewSchema.index({ chainId: 1, txHash: 1 }, { unique: true });
 
-// Optimize fetching reviews for a service (filter by serviceId, sort by createdAt)
+// Query optimization: fetch reviews for a service
 ReviewSchema.index({ serviceId: 1, createdAt: -1 });
+
+// Query optimization: fetch reviews for a buyer-seller relationship
+ReviewSchema.index({ reviewerWallet: 1, sellerWallet: 1, chainId: 1 });
 
 export const Review = mongoose.model<IReview>("Review", ReviewSchema);
